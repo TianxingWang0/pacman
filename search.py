@@ -17,7 +17,7 @@ In search.py, you will implement generic search algorithms which are called by
 Pacman agents (in searchAgents.py).
 """
 
-import util
+from util import Stack, Queue, PriorityQueue
 
 class SearchProblem:
     """
@@ -87,17 +87,125 @@ def depthFirstSearch(problem):
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # fringe = Stack()
+    # start_state = problem.getStartState()
+    # fringe.push((start_state, []))  # (state, the path from start to current state)
+    # visited = set()
+    # while not fringe.isEmpty():
+    #     curr, path = fringe.pop()
+    #     if problem.isGoalState(curr):
+    #         return path
+    #     if curr in visited:
+    #         continue
+    #     visited.add(curr)
+    #     for nbr, direction, cost in problem.getSuccessors(curr):
+    #         if nbr not in visited:
+    #             tmp = path + [direction]
+    #             fringe.push((nbr, tmp))
+    # return []
+
+    fringe = Stack()
+    start_state = problem.getStartState()
+    fringe.push(start_state)
+    fringe_path = dict()  # <state, optimal path from start to state>
+    fringe_path[start_state] = []
+    visited = set()
+    while not fringe.isEmpty():
+        curr = fringe.pop()
+        path = fringe_path.pop(curr)
+        if problem.isGoalState(curr):
+            return path
+        if curr in visited:
+            continue
+        visited.add(curr)
+        for nbr, direction, cost in problem.getSuccessors(curr):
+            if nbr not in visited:
+                fringe.push(nbr)
+                fringe_path[nbr] = path + [direction]
+    return []
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # fringe = Queue()
+    # start_state = problem.getStartState()
+    # fringe.push((start_state, []))  # (state, the path from start to current state)
+    # visited = set()
+    # while not fringe.isEmpty():
+    #     curr, path = fringe.pop()
+    #     if problem.isGoalState(curr):
+    #         return path
+    #     if curr in visited:
+    #         continue
+    #     visited.add(curr)
+    #     for nbr, direction, cost in problem.getSuccessors(curr):
+    #         if nbr not in visited:
+    #             tmp = path + [direction]
+    #             fringe.push((nbr, tmp))
+    # return []
+
+    fringe = Queue()
+    start_state = problem.getStartState()
+    fringe.push(start_state)
+    fringe_path = dict()  # <state, optimal path from start to state>
+    fringe_path[start_state] = []
+    visited = set()
+    while not fringe.isEmpty():
+        curr = fringe.pop()
+        path = fringe_path.pop(curr)
+        if problem.isGoalState(curr):
+            return path
+        if curr in visited:
+            continue
+        visited.add(curr)
+        for nbr, direction, cost in problem.getSuccessors(curr):
+            if nbr not in visited and nbr not in fringe_path:
+                fringe.push(nbr)
+                fringe_path[nbr] = path + [direction]
+    return []
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # fringe = PriorityQueue()
+    # fringe.push((problem.getStartState(), []), 0)  # (state, the path from start to current state), cost as priority
+    # visited = set()
+    # while not fringe.isEmpty():
+    #     curr, path = fringe.pop()
+    #     if problem.isGoalState(curr):
+    #         return path
+    #     if curr in visited:  # for duplicates in fringe
+    #         continue
+    #     visited.add(curr)
+    #     for nbr, direction, cost in problem.getSuccessors(curr):
+    #         tmp = path + [direction]
+    #         fringe.push((nbr, tmp), problem.getCostOfActions(tmp))
+    # return []
+
+    fringe = PriorityQueue()
+    fringe.push(problem.getStartState(), 0)  # state, cost as priority
+    fringe_path = dict()
+    fringe_path[problem.getStartState()] = ([], 0)  # path, cost of path
+    visited = set()
+    while not fringe.isEmpty():
+        curr = fringe.pop()
+        path, path_cost = fringe_path.pop(curr)
+        if problem.isGoalState(curr):
+            return path
+        if curr in visited:
+            continue
+        visited.add(curr)
+        for nbr, direction, cost in problem.getSuccessors(curr):
+            nbr_path = path + [direction]
+            nbr_path_cost = problem.getCostOfActions(nbr_path)
+            if nbr in fringe_path:
+                if nbr_path_cost < fringe_path[nbr][1]:
+                    fringe.update(nbr, nbr_path_cost)
+                    fringe_path[nbr] = (nbr_path, nbr_path_cost)
+            else:
+                fringe.push(nbr, nbr_path_cost)
+                fringe_path[nbr] = (nbr_path, nbr_path_cost)
+    return []
 
 def nullHeuristic(state, problem=None):
     """
@@ -109,7 +217,45 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # fringe = PriorityQueue()
+    # fringe.push((problem.getStartState(), []), 0)
+    # visited = set()
+    # while not fringe.isEmpty():
+    #     curr, path = fringe.pop()
+    #     if problem.isGoalState(curr):
+    #         return path
+    #     if curr in visited:  # for duplicates in fringe
+    #         continue
+    #     visited.add(curr)
+    #     for nbr, direction, cost in problem.getSuccessors(curr):
+    #         tmp = path + [direction]
+    #         fringe.push((nbr, tmp), problem.getCostOfActions(tmp) + heuristic(nbr, problem))
+    # return []
+
+    fringe = PriorityQueue()
+    fringe.push(problem.getStartState(), 0)  # state, cost as priority
+    fringe_path = dict()
+    fringe_path[problem.getStartState()] = ([], 0)  # path, cost of path
+    visited = set()
+    while not fringe.isEmpty():
+        curr = fringe.pop()
+        path, path_cost = fringe_path.pop(curr)
+        if problem.isGoalState(curr):
+            return path
+        if curr in visited:
+            continue
+        visited.add(curr)
+        for nbr, direction, cost in problem.getSuccessors(curr):
+            nbr_path = path + [direction]
+            nbr_path_cost = problem.getCostOfActions(nbr_path) + heuristic(nbr, problem)
+            if nbr in fringe_path:
+                if nbr_path_cost < fringe_path[nbr][1]:
+                    fringe.update(nbr, nbr_path_cost)
+                    fringe_path[nbr] = (nbr_path, nbr_path_cost)
+            else:
+                fringe.push(nbr, nbr_path_cost)
+                fringe_path[nbr] = (nbr_path, nbr_path_cost)
+    return []
 
 
 # Abbreviations

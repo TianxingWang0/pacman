@@ -288,6 +288,7 @@ class CornersProblem(search.SearchProblem):
         # Please add any code here which you would like to use
         # in initializing the problem
         "*** YOUR CODE HERE ***"
+        self.startingGameState = startingGameState  # for mazeDistance as heuristic
 
     def getStartState(self):
         """
@@ -295,14 +296,14 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.startingPosition, ()  # state: currently visited corners
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return len(state[1]) == 4
 
     def getSuccessors(self, state):
         """
@@ -314,7 +315,7 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
-
+        (curr_x, curr_y), visited_corners = state
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
@@ -325,7 +326,15 @@ class CornersProblem(search.SearchProblem):
             #   hitsWall = self.walls[nextx][nexty]
 
             "*** YOUR CODE HERE ***"
-
+            delta_x, delta_y = Actions.directionToVector(action)
+            next_x, next_y = int(curr_x + delta_x), int(curr_y + delta_y)
+            if not self.walls[next_x][next_y]:
+                next_position = (next_x, next_y)
+                next_visited_corners = list(visited_corners)
+                if next_position in self.corners and self.corners.index(next_position) not in visited_corners:
+                    next_visited_corners.append(self.corners.index(next_position))
+                next_state = (next_position, tuple(next_visited_corners))
+                successors.append((next_state, action, 1))
         self._expanded += 1 # DO NOT CHANGE
         return successors
 
@@ -360,7 +369,13 @@ def cornersHeuristic(state, problem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    curr, visited_corners = state
+    heuristic = 0
+    for i in range(0, 4):
+        if i not in list(visited_corners):
+            # heuristic = max(heuristic, util.manhattanDistance(curr, corners[i]))
+            heuristic = max(heuristic, mazeDistance(curr, corners[i], problem.startingGameState))
+    return heuristic
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -454,7 +469,18 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    foods = foodGrid.asList()
+    heuristic = 0
+    for food in foods:
+        key = position + food
+        if key in problem.heuristicInfo:
+            heuristic = max(heuristic, problem.heuristicInfo[key])
+        else:
+            tmp = mazeDistance(position, food, problem.startingGameState)
+            # tmp = util.manhattanDistance(position, food)
+            problem.heuristicInfo[key] = tmp
+            heuristic = max(heuristic, tmp)
+    return heuristic
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -485,7 +511,8 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return search.breadthFirstSearch(problem)
+
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -521,7 +548,7 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return state in self.food.asList()
 
 def mazeDistance(point1, point2, gameState):
     """
